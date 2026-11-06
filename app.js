@@ -1496,24 +1496,24 @@ function buildStrip(obj) {
   requestAnimationFrame(placeCap);
   el._placeCap = placeCap;
   const setVol = db => { obj.vol = db; applyMix(obj); placeCap(); el.querySelector('.s-vol').textContent = fmtDb(db); if (!isM) syncHeader(obj); };
-  cap.addEventListener('mousedown', e => {
+  cap.addEventListener('pointerdown', e => {
     e.preventDefault();
     const h = trk.clientHeight - 16, y0 = e.clientY, p0 = dbToFader(obj.vol);
     const mv = ev => { const fine = ev.shiftKey || ev.metaKey ? 0.15 : 1; const p = clamp(p0 + (y0 - ev.clientY) / h * fine, 0, 1); let db = faderToDb(p); if (db !== -Infinity) db = Math.round(db * 10) / 10; setVol(db); };
-    const up = () => { window.removeEventListener('mousemove', mv); window.removeEventListener('mouseup', up); };
-    window.addEventListener('mousemove', mv); window.addEventListener('mouseup', up);
+    const up = () => { window.removeEventListener('pointermove', mv); window.removeEventListener('pointerup', up); };
+    window.addEventListener('pointermove', mv); window.addEventListener('pointerup', up);
   });
   cap.addEventListener('dblclick', () => setVol(0));
-  trk.addEventListener('mousedown', e => { if (e.target !== trk) return; const r = trk.getBoundingClientRect(); const p = clamp(1 - (e.clientY - r.top - 8) / (r.height - 16), 0, 1); setVol(Math.round(faderToDb(p) * 10) / 10 || faderToDb(p)); });
+  trk.addEventListener('pointerdown', e => { if (e.target !== trk) return; const r = trk.getBoundingClientRect(); const p = clamp(1 - (e.clientY - r.top - 8) / (r.height - 16), 0, 1); setVol(Math.round(faderToDb(p) * 10) / 10 || faderToDb(p)); });
   // pan
   const knob = el.querySelector('.knob');
   if (knob) {
     const setPan = v => { obj.pan = Math.round(v * 100) / 100; applyMix(obj); knob.style.setProperty('--rot', obj.pan * 135 + 'deg'); el.querySelector('.pan-val').textContent = panLabel(obj.pan); };
-    knob.addEventListener('mousedown', e => {
+    knob.addEventListener('pointerdown', e => {
       e.preventDefault(); const y0 = e.clientY, p0 = obj.pan;
       const mv = ev => setPan(clamp(p0 + (y0 - ev.clientY) / 120, -1, 1));
-      const up = () => { window.removeEventListener('mousemove', mv); window.removeEventListener('mouseup', up); };
-      window.addEventListener('mousemove', mv); window.addEventListener('mouseup', up);
+      const up = () => { window.removeEventListener('pointermove', mv); window.removeEventListener('pointerup', up); };
+      window.addEventListener('pointermove', mv); window.addEventListener('pointerup', up);
     });
     knob.addEventListener('dblclick', () => setPan(0));
   }
