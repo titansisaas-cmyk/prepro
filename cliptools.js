@@ -19,6 +19,11 @@ clipBar.innerHTML = `
   <button data-ct="split" title="Split the clip in two at the play position">${CT_ICON.split}<span>Split</span></button>
   <button data-ct="fadeIn" title="Fade in: start softly. Tap again to remove.">${CT_ICON.fadeIn}<span>Fade in</span></button>
   <button data-ct="fadeOut" title="Fade out: end softly. Tap again to remove.">${CT_ICON.fadeOut}<span>Fade out</span></button>
+  <div class="cb-gain" role="group" aria-label="Clip volume">
+    <button data-ct="gainDn" title="Make this clip quieter (1 dB)" aria-label="Quieter">−</button>
+    <span id="cbGain" title="Clip volume. Tap to reset to 0 dB.">0 dB</span>
+    <button data-ct="gainUp" title="Make this clip louder (1 dB)" aria-label="Louder">+</button>
+  </div>
   <button data-ct="del" class="cb-del" title="Delete this clip">${CT_ICON.del}<span>Delete</span></button>
   <button data-ct="close" class="cb-x" title="Done" aria-label="Done">✕</button>`;
 document.body.appendChild(clipBar);
@@ -31,6 +36,13 @@ function clipTool(kind) {
   if (kind === 'close') { S.selClips.clear(); dirty(); return syncClipBar(); }
   if (!list.length) return syncClipBar();
   if (kind === 'del') { cmdDelete(); return syncClipBar(); }
+  if (kind === 'gainUp' || kind === 'gainDn' || kind === 'gain0') {
+    pushHistory();
+    for (const { c } of list) c.gain = kind === 'gain0' ? 0 : clamp(Math.round(((c.gain || 0) + (kind === 'gainUp' ? 1 : -1)) * 10) / 10, -36, 24);
+    dirty(); const g = list[0].c.gain || 0;
+    status(kind === 'gain0' ? 'Clip volume back to 0 dB' : (kind === 'gainUp' ? 'Louder: ' : 'Quieter: ') + (g > 0 ? '+' : '') + g + ' dB. The waveform shows the change.');
+    return syncClipBar();
+  }
   const live = list.filter(f => !f.c.locked);
   if (!live.length) return status('This clip is locked (Clip > Lock / Unlock)');
   const t = ctHere();
@@ -57,6 +69,7 @@ function clipTool(kind) {
   }
 }
 clipBar.querySelectorAll('[data-ct]').forEach(b => b.onclick = e => { e.stopPropagation(); clipTool(b.dataset.ct); });
+$('#cbGain').onclick = e => { e.stopPropagation(); clipTool('gain0'); };
 
 function syncClipBar() {
   const list = ctClips();
@@ -65,6 +78,8 @@ function syncClipBar() {
   document.body.classList.toggle('has-clipbar', show);
   if (!show) return;
   $('#cbName').textContent = list.length === 1 ? list[0].c.name : list.length + ' clips';
+  const g = list[0].c.gain || 0;
+  $('#cbGain').textContent = (g > 0 ? '+' : g < 0 ? '−' : '') + Math.abs(g) + ' dB';
   clipBar.querySelector('[data-ct="fadeIn"]').classList.toggle('on', list.every(f => f.c.fadeIn > 0));
   clipBar.querySelector('[data-ct="fadeOut"]').classList.toggle('on', list.every(f => f.c.fadeOut > 0));
   const t = ctHere(), inside = list.some(({ c }) => t > c.start + 0.01 && t < c.start + c.dur - 0.01);

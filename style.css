@@ -428,9 +428,50 @@ body.simple .tb-group .big-play { height: 36px; padding: 0 14px 0 11px; }
 .clip-bar .cb-x { min-width: 40px; font-size: 16px; }
 body.has-clipbar .notice { bottom: var(--cb-top, 140px); }
 @media (max-width: 600px) {
-  .clip-bar { display: grid; grid-template-columns: repeat(4, 1fr); width: calc(100vw - 16px); gap: 6px; overflow: visible; }
+  .clip-bar { display: grid; grid-template-columns: repeat(5, 1fr); width: calc(100vw - 16px); gap: 5px; overflow: visible; }
+  .clip-bar .cb-gain { grid-column: span 3; }
   .clip-bar[hidden] { display: none; }
   .clip-bar .cb-name { display: none; }
   .clip-bar button { min-width: 0; width: 100%; height: 50px; padding: 4px 2px; font-size: 11.5px; }
   .clip-bar .cb-x { font-size: 15px; }
 }
+
+/* clip volume on the clip toolbar */
+.clip-bar .cb-gain { flex: none; display: flex; align-items: stretch; height: 52px; border: 1px solid #1118; border-radius: 10px; overflow: hidden; background: #3a3e44; }
+.clip-bar .cb-gain button { min-width: 46px; height: auto; border: 0; border-radius: 0; font-size: 22px; font-weight: 500; background: transparent; }
+.clip-bar .cb-gain button:first-child { border-right: 1px solid #1118; }
+.clip-bar .cb-gain button:last-child { border-left: 1px solid #1118; }
+.clip-bar .cb-gain span { flex: 1; min-width: 62px; display: flex; flex-direction: column; align-items: center; justify-content: center; font: 600 12px var(--mono, monospace); color: #ffd36b; cursor: pointer; }
+.clip-bar .cb-gain span::before { content: 'Volume'; font: 600 10px Inter, sans-serif; color: var(--text-dim); margin-bottom: 2px; }
+@media (max-width: 600px) { .clip-bar .cb-gain { height: 50px; } .clip-bar .cb-gain button { min-width: 0; flex: 0 0 34%; } }
+
+/* Capture: keeps the last 60 seconds */
+.cap-btn { position: relative; }
+.cap-btn .cap-dot { width: 8px; height: 8px; border-radius: 50%; background: #6b7076; display: inline-block; }
+.cap-btn.listening .cap-dot { background: #ff4a42; box-shadow: 0 0 0 0 #ff4a4288; animation: capPulse 1.6s infinite; }
+@keyframes capPulse { 0% { box-shadow: 0 0 0 0 #ff4a4288; } 70% { box-shadow: 0 0 0 7px #ff4a4200; } 100% { box-shadow: 0 0 0 0 #ff4a4200; } }
+.tp-opts .cap-btn { display: inline-flex; align-items: center; gap: 6px; }
+.tp-opts .cap-btn.listening { color: #fff; border-color: #7a2a26; }
+.pill.cap-btn { gap: 6px; }
+
+/* sections, versions, chains, send to engineer */
+.chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 4px; }
+.chips button { padding: 7px 11px; border-radius: 999px; border: 1px solid #0006; color: #fff; font-weight: 600; font-size: 13px; cursor: pointer; }
+.chips button.sel { outline: 2px solid #fff; outline-offset: 1px; }
+.wf-list { display: flex; flex-direction: column; gap: 6px; max-height: 46vh; overflow: auto; margin: 8px 0; }
+.wf-row { display: flex; align-items: center; gap: 8px; padding: 8px 10px; background: #2a2d31; border: 1px solid #0006; border-radius: 8px; }
+.wf-row > div { flex: 1; min-width: 0; }
+.wf-row b { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.wf-row small { color: var(--text-dim); display: block; margin-top: 2px; }
+.wf-row button { flex: none; padding: 7px 10px; border-radius: 6px; border: 1px solid #111; background: #3a3e44; color: var(--text); font-weight: 600; cursor: pointer; }
+.wf-row button.primary { background: var(--accent-dim, #1f5f9e); border-color: #123a66; color: #fff; }
+.wf-tag { font-size: 10px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: #9fd0ff; margin-left: 6px; }
+.wf-add { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
+.wf-add input { flex: 1 1 180px; min-width: 0; padding: 9px 10px; }
+.wf-add button { flex: none; padding: 9px 14px; border-radius: 6px; border: 1px solid #123a66; background: var(--accent-dim, #1f5f9e); color: #fff; font-weight: 600; cursor: pointer; }
+.wf-check { display: flex; align-items: flex-start; gap: 10px; margin: 8px 0; line-height: 1.35; }
+.wf-check input { margin-top: 3px; width: 18px; height: 18px; flex: none; }
+.wf-check small { display: block; color: var(--text-dim); }
+.wf-files { font: 12px var(--mono, monospace); background: #1c1e21; border: 1px solid #0008; border-radius: 6px; padding: 8px 10px; max-height: 30vh; overflow: auto; white-space: pre-wrap; }
+.wf-prog { height: 8px; background: #1c1e21; border-radius: 4px; overflow: hidden; margin-top: 10px; }
+.wf-prog i { display: block; height: 100%; width: 0; background: #3d8bfd; transition: width .2s; }

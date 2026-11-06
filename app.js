@@ -514,6 +514,7 @@ async function play() {
     }
     midiRecStart(midiArmed, from);
     T.recording = true; T.recStart = from; T.recCtxStart = ctx.currentTime + 0.08;
+    nextTakeColor();
   }
   T.playing = true; T.segs = []; T.sources = []; T.playStart = from;
   const when = ctx.currentTime + 0.08;
@@ -574,7 +575,7 @@ function finishRecording(endPos) {
         const dur = Math.min(buf.duration - off, Math.max(0.05, endPos - recStart));
         // record replaces material underneath (destructive-punch style on the playlist)
         carveRange(tr, recStart, recStart + dur);
-        tr.clips.push(newClip(bid, recStart, { offset: off, dur, name }));
+        tr.clips.push(Object.assign(newClip(bid, recStart, { offset: off, dur, name }), takeTag()));
         sortClips(tr);
       }
       status('Recorded ' + dur2(endPos - recStart) + ' on ' + armed.map(t => t.name).join(', '));
@@ -584,6 +585,50 @@ function finishRecording(endPos) {
   recorder.stop();
 }
 const dur2 = s => s.toFixed(2) + ' s';
+// automatic take colours: every record pass gets its own colour, shared by all tracks recorded in that pass
+const TAKE_COLORS = ['#e0604f', '#4f9de0', '#5fc46a', '#e0b14f', '#a46fe0', '#45c9c0', '#e07fb8', '#b5c24a', '#e08a45', '#7f8fe8'];
+function nextTakeColor() {
+  let seq = 0; S.tracks.forEach(t => [t.clips, ...(t.playlists || []).map(p => p.clips || [])].forEach(cl => (cl || []).forEach(c => { if (c.takeSeq > seq) seq = c.takeSeq; })));
+  T.takeSeq = seq + 1; T.takeColor = TAKE_COLORS[(T.takeSeq - 1) % TAKE_COLORS.length];
+}
+const takeTag = () => (PREF.get('takeColors', true) && T.takeSeq ? { color: T.takeColor, takeSeq: T.takeSeq } : {});
+// song sections: markers named Verse, Chorus and so on get a colour and a band on the ruler
+const SECTION_TYPES = [['Intro', '#8e8cd8'], ['Verse', '#4f8fe0'], ['Pre-Chorus', '#3fb8b0'], ['Chorus', '#e0604f'], ['Bridge', '#a46fe0'], ['Solo', '#e0b14f'], ['Breakdown', '#8fb04a'], ['Outro', '#8a939c']];
+const _secKey = s => String(s || '').toLowerCase().replace(/[^a-z]/g, '');
+const sectionType = name => { const n = _secKey(name); return SECTION_TYPES.find(([k]) => n.startsWith(_secKey(k))); };
+const isSection = m => !!(m.color || sectionType(m.name));
+const markerColor = m => m.color || sectionType(m.name)?.[1] || '#e7c83c';
+function sectionRange(m) {
+  const i = S.markers.indexOf(m), nx = S.markers[i + 1];
+  return [m.t, nx ? nx.t : Math.max(m.t + 4 * beatSec(), sessionEnd())];
+}
+function selectSectionAt(t) {
+  let m = null; for (const k of S.markers) { if (k.t <= t + 1e-6) m = k; else break; }
+  if (!m || !isSection(m)) return false;
+  const [a, b] = sectionRange(m); if (b - a < 0.01) return false;
+  S.sel.start = a; S.sel.end = b; if (!T.playing) S.playhead = a; S.selClips.clear();
+  S.sel.tracks = new Set(S.tracks.map(t => t.id));
+  renderHeaders(); dirty();
+  status(m.name + ' is selected. Turn on Loop to repeat it, or copy it and paste it somewhere else.');
+  return true;
+}
+// press on a marker flag: drag to move it, tap to go there
+function markerPress(m, e, r) {
+  const x0 = e.clientX; let moved = false;
+  const mv = ev => {
+    if (!moved && Math.abs(ev.clientX - x0) < 4) return;
+    if (!moved) pushHistory();
+    moved = true; m.t = snap(Math.max(0, xToT(ev.clientX - r.left))); S.markers.sort((a, b) => a.t - b.t); dirty();
+  };
+  const up = () => {
+    window.removeEventListener('mousemove', mv); window.removeEventListener('mouseup', up);
+    if (moved) return status('Moved ' + m.name + ' to bar ' + String(bbt(m.t)).trim().split('|')[0].trim());
+    setInsertion(m.t);
+    if (S.simple && typeof sectionDialog === 'function') sectionDialog(m);
+  };
+  window.addEventListener('mousemove', mv); window.addEventListener('mouseup', up);
+}
+const clipColor = (c, tr) => (c.color && PREF.get('takeColors', true)) ? c.color : tr.color;
 
 // metronome lookahead
 function scheduleClicks() {
@@ -727,6 +772,10 @@ function cmdDelete() {
   for (const tr of selectedTracks()) {
     carveRange(tr, start, end);
     if (S.mode === 'shuffle') tr.clips.forEach(c => { if (c.start >= end - 1e-6) c.start -= end - start; });
+  }
+  if (S.mode === 'shuffle' && selectedTracks().length === S.tracks.length) {   // markers follow the edit
+    S.markers = S.markers.filter(m => !(m.t > start + 1e-6 && m.t < end - 1e-6));
+    S.markers.forEach(m => { if (m.t >= end - 1e-6) m.t -= end - start; });
   }
   if (S.mode === 'shuffle') S.sel.end = start;
   dirty(); renderClipList(); status('Cleared selection');
@@ -895,10 +944,17 @@ function drawRuler() {
   rctx.fillStyle = '#e09a4a'; rctx.beginPath(); const tx = tToX(0); rctx.moveTo(tx, 59); rctx.lineTo(tx + 8, 59); rctx.lineTo(tx, 68); rctx.fill();
   rctx.fillStyle = '#e9c08f'; rctx.fillText('♩ = ' + S.tempo, Math.max(tx, 0) + 12, 66.5);
   // Markers
+  S.markers.forEach((m, i) => {   // section bands: each section fills the ruler until the next marker
+    const col = markerColor(m); if (!isSection(m)) return;
+    const x = tToX(m.t), nx = i + 1 < S.markers.length ? tToX(S.markers[i + 1].t) : Math.max(x, tToX(sessionEnd()));
+    if (nx < 0 || x > w) return;
+    rctx.fillStyle = col + '40'; rctx.fillRect(x, 1, Math.max(0, nx - x), 17);
+  });
   for (const m of S.markers) {
     const x = tToX(m.t); if (x < -100 || x > w) continue;
-    rctx.fillStyle = '#e7c83c'; rctx.beginPath(); rctx.moveTo(x, 3); rctx.lineTo(x + 8, 3); rctx.lineTo(x + 8, 12); rctx.lineTo(x, 17); rctx.fill();
-    rctx.fillStyle = '#e8d88c'; rctx.fillText(m.name, x + 11, 10);
+    const col = markerColor(m);
+    rctx.fillStyle = col; rctx.beginPath(); rctx.moveTo(x, 3); rctx.lineTo(x + 8, 3); rctx.lineTo(x + 8, 12); rctx.lineTo(x, 17); rctx.fill();
+    rctx.fillStyle = shade(col, 60); rctx.fillText(m.name, x + 11, 10);
   }
   // playhead
   const px = Math.round(tToX(currentPos())) + .5;
@@ -929,8 +985,8 @@ function drawLanes() {
     lctx.beginPath(); lctx.moveTo(x, 0); lctx.lineTo(x, totalH); lctx.stroke();
   }
   // markers lines
-  lctx.strokeStyle = '#e7c83c55'; lctx.setLineDash([3, 4]);
-  for (const m of S.markers) { const x = Math.round(tToX(m.t)) + .5; lctx.beginPath(); lctx.moveTo(x, 0); lctx.lineTo(x, totalH); lctx.stroke(); }
+  lctx.setLineDash([3, 4]);
+  for (const m of S.markers) { const x = Math.round(tToX(m.t)) + .5; lctx.strokeStyle = markerColor(m) + '66'; lctx.beginPath(); lctx.moveTo(x, 0); lctx.lineTo(x, totalH); lctx.stroke(); }
   lctx.setLineDash([]);
   // clips
   S.tracks.forEach((tr, i) => {
@@ -980,12 +1036,13 @@ function drawClip(c, tr, y) {
   const h = tr.h - 3, top = y + 1, nameH = tr.h >= 70 ? 15 : 0;
   const sel = S.selClips.has(c.id);
   const w = Math.max(1, x1 - x0);
+  const col = clipColor(c, tr);
   // body
-  lctx.fillStyle = c.muted ? '#2b2e33' : shade(tr.color, -70);
+  lctx.fillStyle = c.muted ? '#2b2e33' : shade(col, -70);
   lctx.fillRect(x0, top, w, h);
   // name bar
   if (nameH) {
-    lctx.fillStyle = sel ? '#f2f5f8' : shade(tr.color, -10);
+    lctx.fillStyle = sel ? '#f2f5f8' : shade(col, -10);
     lctx.fillRect(x0, top, w, nameH);
     lctx.save(); lctx.beginPath(); lctx.rect(x0, top, w, nameH); lctx.clip();
     lctx.fillStyle = sel ? '#1b1d20' : '#0d0f11'; lctx.font = '600 10px Inter, sans-serif'; lctx.textBaseline = 'middle';
@@ -998,7 +1055,7 @@ function drawClip(c, tr, y) {
   if (bd) {
     const pk = bd.peaks, wTop = top + nameH + 2, wH = h - nameH - 4, mid = wTop + wH / 2;
     const xs = Math.max(0, Math.floor(x0)), xe = Math.min(lanesW, Math.ceil(x1));
-    lctx.fillStyle = c.muted ? '#6b7076' : sel ? shade(tr.color, 110) : shade(tr.color, 70);
+    lctx.fillStyle = c.muted ? '#6b7076' : sel ? shade(col, 110) : shade(col, 70);
     lctx.save(); lctx.beginPath(); lctx.rect(xs, wTop, xe - xs, wH); lctx.clip();
     lctx.beginPath();
     for (let x = xs; x < xe; x++) {
@@ -1035,7 +1092,7 @@ function drawClip(c, tr, y) {
   if (c.fadeIn > 0) fadeShape(x0, tToX(c.start + c.fadeIn), true);
   if (c.fadeOut > 0) fadeShape(tToX(c.start + c.dur - c.fadeOut), x1, false);
   // border
-  lctx.strokeStyle = sel ? '#ffffff' : shade(tr.color, -110);
+  lctx.strokeStyle = sel ? '#ffffff' : shade(col, -110);
   lctx.lineWidth = sel ? 1.5 : 1;
   lctx.strokeRect(x0 + .5, top + .5, w - 1, h - 1);
   lctx.lineWidth = 1;
@@ -1338,7 +1395,9 @@ ruler.addEventListener('mousedown', e => {
   const t = snap(Math.max(0, xToT(x)));
   if (y < 19) {
     const m = S.markers.find(m => Math.abs(tToX(m.t) - x) < 8 || (x > tToX(m.t) && x < tToX(m.t) + 10 + m.name.length * 6));
-    if (m) { if (e.detail === 2) renameMarker(m); else setInsertion(m.t); return; }
+    if (m && e.detail !== 2) return markerPress(m, e, r);
+    if (m) { renameMarker(m); return; }
+    if (e.detail !== 2 && selectSectionAt(xToT(x))) return;
     if (e.detail === 2) { pushHistory(); S.markers.push({ id: uid('mk'), t, name: 'Marker ' + (S.markers.length + 1) }); S.markers.sort((a, b) => a.t - b.t); dirty(); }
     return;
   }

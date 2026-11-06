@@ -299,10 +299,12 @@ function onMidi(inp, e) {
       if (i.type === 'drums') drumHit(ctx, dest, tr, n, ctx.currentTime);
       else if (i.type === 'synth') { const k = tr.id + ':' + d1; MIDI.liveVoices.get(k)?.release(ctx.currentTime); MIDI.liveVoices.set(k, synthVoice(ctx, dest, i, d1, d2, ctx.currentTime)); }
       if (midiRec && midiRec.tracks.has(tr.id)) recNoteOn(tr, n, ctxT);
+      else window.capMidi?.('on', tr, n, ctxT);
     } else if (isOff) {
       const k = tr.id + ':' + d1;
       if (i.type === 'synth') { if (MIDI.sustain.get(ch)) { (MIDI.held ||= new Set()).add(k); } else { MIDI.liveVoices.get(k)?.release(ctx.currentTime); MIDI.liveVoices.delete(k); } }
       if (midiRec && midiRec.tracks.has(tr.id)) recNoteOff(tr, d1, ctxT);
+      else window.capMidi?.('off', tr, { n: d1 }, ctxT);
     } else if (type === 0xB0 && d1 === 64) {
       MIDI.sustain.set(ch, d2 >= 64);
       if (d2 < 64 && MIDI.held) { for (const k of MIDI.held) { MIDI.liveVoices.get(k)?.release(ctx.currentTime); MIDI.liveVoices.delete(k); } MIDI.held.clear(); }
@@ -352,7 +354,7 @@ function midiRecFinish(endPos) {
     tr.takes = (tr.takes || 0) + 1;
     const dur = Math.max(0.1, endPos - r.from);
     carveRange(tr, r.from, r.from + dur);
-    const c = newMidiClip(notes, r.from, dur, tr.name.replace(/\s+/g, '_') + '_' + String(tr.takes).padStart(2, '0'));
+    const c = Object.assign(newMidiClip(notes, r.from, dur, tr.name.replace(/\s+/g, '_') + '_' + String(tr.takes).padStart(2, '0')), takeTag());
     tr.clips.push(c); sortClips(tr); made.push(tr.name + ' (' + notes.length + ' notes)');
   }
   if (made.length) { status('Recorded MIDI on ' + made.join(', ')); refreshAll(); }
@@ -642,8 +644,17 @@ window.addEventListener('drop', e => {
 }, true);
 
 function exportMidi() {
+  const bytes = midiFileBytes();
+  if (!bytes) return status('There are no MIDI clips to export');
+  const blob = new Blob([bytes], { type: 'audio/midi' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = (S.name || 'Song').replace(/[^\w\- ]+/g, '').trim().replace(/\s+/g, '_') + '.mid';
+  document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 30000);
+  status('Exported ' + a.download);
+}
+// Standard MIDI file (type 1) of every instrument track, or null when there is no MIDI
+function midiFileBytes() {
   const insts = S.tracks.filter(t => isInst(t) && t.clips.some(c => c.type === 'midi'));
-  if (!insts.length) return status('There are no MIDI clips to export');
+  if (!insts.length) return null;
   const PPQ = 480, spb = beatSec();
   const vlq = v => { const b = [v & 0x7f]; while ((v >>= 7)) b.unshift((v & 0x7f) | 0x80); return b; };
   const chunk = (id, bytes) => [...id].map(c => c.charCodeAt(0)).concat([(bytes.length >>> 24) & 255, (bytes.length >>> 16) & 255, (bytes.length >>> 8) & 255, bytes.length & 255], bytes);
@@ -664,10 +675,7 @@ function exportMidi() {
     return chunk('MTrk', bytes);
   });
   const all = [...chunk('MThd', [0, 1, 0, insts.length + 1, PPQ >> 8, PPQ & 255]), ...chunk('MTrk', tempoTrk), ...trks.flat()];
-  const blob = new Blob([new Uint8Array(all)], { type: 'audio/midi' });
-  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = (S.name || 'Song').replace(/[^\w\- ]+/g, '').trim().replace(/\s+/g, '_') + '.mid';
-  document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 30000);
-  status('Exported ' + a.download);
+  return new Uint8Array(all);
 }
 
 // ───────────────────────── Instrument settings (kit, synth, MIDI out) ─────────────────────────
