@@ -381,3 +381,34 @@ body.simple .ruler-labels div:nth-child(3) { opacity: .5; }
 .big-play.on { background: #2a8a57; }
 .big-play:disabled { opacity: .45; }
 body.simple .tb-group .big-play { height: 36px; padding: 0 14px 0 11px; }
+
+/* ───────── Plans and My Account ───────── */
+.modal.wide { width: min(980px, calc(100vw - 24px)); max-width: none; }
+.plan-intro { margin: 0 0 14px; font-size: 14px; line-height: 1.5; }
+.plans { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+.plan { position: relative; display: flex; flex-direction: column; gap: 6px; padding: 16px 14px 14px; border: 1px solid var(--line-strong); border-radius: 10px; background: var(--bg-2); }
+.plan.best { border-color: #3d8bfd; box-shadow: 0 0 0 1px #3d8bfd inset; }
+.plan.current { outline: 2px solid #2f8f5a; }
+.plan-flag { position: absolute; top: -10px; left: 14px; background: #3d8bfd; color: #fff; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 999px; }
+.plan h4 { margin: 0; font-size: 15px; }
+.plan-price { font-size: 26px; font-weight: 700; line-height: 1.1; }
+.plan-price small { display: block; font-size: 12px; font-weight: 500; opacity: .7; margin-top: 2px; }
+.plan-lead { margin: 0; font-size: 13px; opacity: .85; }
+.plan ul { margin: 4px 0 10px; padding-left: 18px; font-size: 13px; line-height: 1.55; flex: 1; }
+.plan button { width: 100%; height: 36px; font-size: 14px; }
+.acct { display: grid; gap: 2px; margin-bottom: 10px; }
+.acct-row { display: flex; justify-content: space-between; gap: 16px; padding: 8px 0; border-bottom: 1px solid var(--line); font-size: 14px; }
+.acct-row span { opacity: .7; }
+.acct-row .mono { font-family: var(--mono, monospace); }
+.acct-key { display: flex; gap: 8px; margin-top: 12px; }
+.acct-key input { flex: 1; height: 38px; font-size: 14px; padding: 0 10px; }
+.acct-key button { height: 38px; padding: 0 16px; font-size: 14px; }
+.acct-msg { min-height: 18px; margin: 8px 0 0; font-size: 13px; }
+.acct-msg.bad { color: #ff7a7a; }
+.acct-btn { display: inline-flex; align-items: center; gap: 6px; }
+.acct-btn.pro { color: #7ee2a8; }
+.acct-btn:not(.pro) { color: #ffd479; }
+@media (max-width: 900px) {
+  .plans { grid-template-columns: 1fr; }
+  .modal.wide .body { max-height: calc(100dvh - 160px); overflow-y: auto; }
+}
