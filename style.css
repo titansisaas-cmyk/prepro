@@ -558,3 +558,12 @@ body.has-clipbar .notice { bottom: var(--cb-top, 140px); }
 .aud-amt { display: grid; grid-template-columns: 70px 1fr 48px; align-items: center; gap: 8px; margin-top: 8px; }
 .aud-amt[hidden] { display: none; }
 @media (max-width: 600px) { .aud-ab button, .aud-play { padding: 10px 14px; } .aud-opts { max-height: 36vh; } }
+
+/* Install and legal */
+.inst-steps { margin: 8px 0 10px; padding-left: 22px; line-height: 1.6; font-size: 14px; }
+.inst-steps li { margin-bottom: 6px; }
+.legal-foot { margin: 14px 0 0; font-size: 11.5px; line-height: 1.5; color: var(--text-dim); text-align: center; }
+.legal-foot a, .legal-agree a { color: #8cc6ff; }
+.legal-agree { margin: 10px 0 2px; font-size: 13px; align-items: flex-start; }
+.legal-agree input { margin-top: 3px; }
+.modal a { color: #8cc6ff; }

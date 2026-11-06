@@ -1,0 +1,22 @@
+{
+  "name": "PrePro: from idea to finished song",
+  "short_name": "PrePro",
+  "description": "Record ideas anywhere, then edit, mix and finish the song. A multitrack studio for songwriters and engineers.",
+  "id": "./",
+  "start_url": "./?source=app",
+  "scope": "./",
+  "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone"],
+  "orientation": "any",
+  "background_color": "#16181c",
+  "theme_color": "#16181c",
+  "categories": ["music", "productivity"],
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Record an idea", "short_name": "Record", "url": "./#record", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }] }
+  ]
+}

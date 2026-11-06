@@ -52,7 +52,7 @@ async function startListening(quiet) {
     if (!CAP.node) {
       if (ctx.audioWorklet && window.AudioWorkletNode && capWorkletReady !== false) {
         if (!capWorkletReady) capWorkletReady = (async () => {
-          try { await ctx.audioWorklet.addModule('capture-worklet.js?v=13'); return true; } catch (e) {}
+          try { await ctx.audioWorklet.addModule('capture-worklet.js?v=15'); return true; } catch (e) {}
           try { await ctx.audioWorklet.addModule(URL.createObjectURL(new Blob([CAP_WORKLET], { type: 'application/javascript' }))); return true; } catch (e) {}
           return false;
         })();
@@ -83,7 +83,7 @@ function stopListening() {
 }
 // when the microphone opens for recording, Capture starts listening too (it can be switched off)
 { const _ensureMic = ensureMic;
-  ensureMic = async function (...a) { const ok = await _ensureMic(...a); if (ok && PREF.get('captureAuto', true) && !CAP.listening) setTimeout(() => startListening(true), 0); return ok; }; }
+  ensureMic = async function (...a) { const ok = await _ensureMic(...a); if (ok && PREF.get('captureAuto', !/iPhone|iPad|iPod/.test(navigator.userAgent) && !(navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)) && !CAP.listening) setTimeout(() => startListening(true), 0); return ok; }; }
 // track each play pass so a capture during playback lands where you played it
 { const _play = play, _stop = stop;
   play = async function (...a) {
@@ -604,7 +604,7 @@ MENUS.file = (orig => () => { const a = orig(); const at = a.findIndex(x => x.la
 MENUS.event = (orig => () => [...orig(), { sep: true },
   { label: 'Capture What I Just Played', k: 'Shift+C', action: captureNow },
   CAP.listening ? { label: 'Capture: Stop Listening', action: stopListening } : { label: 'Capture: Start Listening', action: () => startListening() },
-  { label: 'Start Listening When the Mic Opens', checked: PREF.get('captureAuto', true), action: () => PREF.set('captureAuto', !PREF.get('captureAuto', true)) },
+  { label: 'Start Listening When the Mic Opens', checked: PREF.get('captureAuto', !/iPhone|iPad|iPod/.test(navigator.userAgent) && !(navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)), action: () => PREF.set('captureAuto', !PREF.get('captureAuto', !/iPhone|iPad|iPod/.test(navigator.userAgent) && !(navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1))) },
   { sep: true }, ...SECTION_TYPES.slice(0, 5).map(([k]) => ({ label: 'Add Section: ' + k, action: () => addSection(k) }))])(MENUS.event);
 MENUS.track = (orig => () => [...orig(), { sep: true }, { label: 'Effect Chains…', action: () => chainsDialog() }])(MENUS.track);
 MENUS.options = (orig => () => [...orig(), { label: 'Colour Takes Automatically', checked: PREF.get('takeColors', true), action: () => { PREF.set('takeColors', !PREF.get('takeColors', true)); dirty(); } }])(MENUS.options);
