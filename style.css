@@ -29,7 +29,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
 input, select { font: inherit; color: var(--text); }
 [hidden] { display: none !important; }
 
-#app { display: grid; grid-template-rows: 26px auto 1fr 46px; height: 100vh; }
+#app { display: grid; grid-template-rows: 26px auto 1fr calc(46px + env(safe-area-inset-bottom)); height: 100vh; height: 100dvh; }
 
 /* Menu bar */
 .menubar { display: flex; align-items: center; background: linear-gradient(#34373b, #2a2c30); border-bottom: 1px solid var(--line-strong); padding: 0 8px; gap: 2px; }
@@ -155,7 +155,7 @@ input, select { font: inherit; color: var(--text); }
 .s-name i { width: 70px; height: 4px; border-radius: 2px; }
 
 /* Transport */
-.transport { display: flex; align-items: center; gap: 14px; padding: 0 12px; background: linear-gradient(#34373b, #27292c); border-top: 1px solid var(--line-strong); }
+.transport { display: flex; align-items: center; gap: 14px; padding: 0 12px env(safe-area-inset-bottom); background: linear-gradient(#34373b, #27292c); border-top: 1px solid var(--line-strong); }
 .tp-btns { display: flex; gap: 3px; }
 .tp-btns button { width: 38px; height: 30px; border-radius: 4px; border: 1px solid #111; background: linear-gradient(#545a61, #3d4146); color: #dfe3e8; display: flex; align-items: center; justify-content: center; }
 .tp-btns button svg { width: 16px; height: 16px; }
@@ -376,3 +376,8 @@ body.simple .ruler-labels div:nth-child(3) { opacity: .5; }
 .mic-small { margin: 10px 0 0; font-size: 13px; line-height: 1.5; opacity: .75; max-width: 420px; }
 .mic-link { display: block; width: 100%; margin-top: 10px; font-size: 13px; padding: 8px; user-select: all; -webkit-user-select: all; }
 @media (max-width: 900px) { #modal .foot { flex-wrap: wrap; } }
+
+.tb-group .big-play, .big-play { display: inline-flex; align-items: center; gap: 8px; height: 38px; padding: 0 18px 0 14px; border-radius: 19px; border: 1px solid #2f8f5a; background: #1f6f45; color: #fff; font-size: 15px; font-weight: 600; cursor: pointer; }
+.big-play.on { background: #2a8a57; }
+.big-play:disabled { opacity: .45; }
+body.simple .tb-group .big-play { height: 36px; padding: 0 14px 0 11px; }

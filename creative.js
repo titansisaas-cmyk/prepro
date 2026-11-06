@@ -92,6 +92,7 @@ const ICON = {
   redo: '<svg viewBox="0 0 20 20" width="15" height="15"><path d="M12 5l4.5 4.5L12 14M16 9.5H8.5a5 5 0 000 10H11" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>',
   takes: '<svg viewBox="0 0 20 20" width="15" height="15"><path d="M3 5h14M3 10h14M3 15h9" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg>',
   share: '<svg viewBox="0 0 20 20" width="15" height="15"><path d="M10 13V3M6 7l4-4 4 4M4 12v4h12v-4" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  play: '<svg viewBox="0 0 20 20" width="18" height="18"><path d="M6 4l10 6-10 6z" fill="currentColor"/></svg>',
   help: '<svg viewBox="0 0 20 20" width="15" height="15"><circle cx="10" cy="10" r="7.5" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M7.8 7.6a2.3 2.3 0 114 1.6c-.9.7-1.8 1.1-1.8 2.4M10 14.3v.2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
 };
 (() => {
@@ -100,6 +101,7 @@ const ICON = {
   grp.className = 'tb-group simple-only creative-bar';
   grp.innerHTML = `
     <button id="bigRec" class="big-rec" title="Record. PrePro counts you in, then records. Press again to stop.">${ICON.rec}<span>Record</span></button>
+    <button id="bigPlay" class="big-play" title="Play my song from the start. Press again to stop.">${ICON.play}<span>Play</span></button>
     <button id="countInBtn" class="pill on" title="Count me in: four clicks before recording starts">Count-in</button>
     <button id="bigUndo" class="pill icon" title="Undo. You can always go back.">${ICON.undo}<span>Undo</span></button>
     <button id="bigRedo" class="pill icon" title="Redo">${ICON.redo}</button>
@@ -114,6 +116,7 @@ const ICON = {
   $('#modeSimple').onclick = () => setSimple(true);
   $('#modePro').onclick = () => setSimple(false);
   $('#bigRec').onclick = bigRecord;
+  $('#bigPlay').onclick = bigPlay;
   $('#countInBtn').onclick = () => { const v = !PREF.get('countIn', true); PREF.set('countIn', v); syncCreativeBar(); status(v ? 'Count-in on: four clicks before recording' : 'Count-in off: recording starts right away'); };
   $('#bigUndo').onclick = () => undo();
   $('#bigRedo').onclick = () => redo();
@@ -121,11 +124,25 @@ const ICON = {
   $('#bigShare').onclick = () => { if (!sessionEnd()) return status('Record something first, then export it'); S.sel.end = S.sel.start; bounce(); };
   $('#bigHelp').onclick = helpDialog;
 })();
+// one big Play button: plays from the start of the song if the play position is at (or past) the end
+function bigPlay() {
+  if (T.recording || counting) return;
+  if (T.playing) { stop(); syncCreativeBar(); return; }
+  const end = sessionEnd();
+  if (!end) return status('Record something first, then press Play');
+  if (S.sel.start >= end - 0.05) setInsertion(0);
+  play(); syncCreativeBar();
+}
+{ const _play = play, _stop = stop;
+  play = async function (...a) { const r = await _play(...a); syncCreativeBar(); return r; };
+  stop = function (...a) { const r = _stop(...a); syncCreativeBar(); return r; }; }
 function syncCreativeBar() {
   const b = $('#bigRec'); if (!b) return;
   const rec = T.recording || counting;
   b.classList.toggle('on', rec);
   b.innerHTML = (rec ? ICON.stop : ICON.rec) + `<span>${counting ? 'Get ready' : rec ? 'Stop' : 'Record'}</span>`;
+  const pb = $('#bigPlay');
+  if (pb) { pb.classList.toggle('on', T.playing); pb.innerHTML = (T.playing ? ICON.stop : ICON.play) + `<span>${T.playing ? 'Stop' : 'Play'}</span>`; pb.disabled = rec; }
   $('#countInBtn').classList.toggle('on', PREF.get('countIn', true));
   $('#bigUndo').disabled = !history.undo.length; $('#bigRedo').disabled = !history.redo.length;
   $('#bigUndo').querySelector('span').textContent = history.undo.length ? 'Undo' : 'Undo';
@@ -196,7 +213,7 @@ finishRecording = function (endPos) {
   const r = _finishRecording(endPos);
   if (S.simple) {
     ensureAutoSave();
-    setTimeout(() => tip('afterTake', 'Nice take. Drag the middle of a clip to move it, or drag its edges to shorten it. Made a mistake? <b>Undo</b> always takes you back.', '#bigUndo'), 1200);
+    setTimeout(() => tip('afterTake', 'Nice take. Press the green <b>Play</b> button to hear it. Drag the middle of a clip to move it, or drag its edges to shorten it. Made a mistake? <b>Undo</b> always takes you back.', '#bigUndo'), 1200);
   }
   return r;
 };
@@ -341,7 +358,7 @@ function showWelcome() {
   w.innerHTML = `<div class="wc-card" role="dialog" aria-modal="true" aria-labelledby="wcTitle">
     <div class="wc-brand"><span class="dot"></span>PrePro</div>
     <h1 id="wcTitle">What would you like to make today?</h1>
-    <p class="wc-sub">Pick a starting point. You can change anything later.</p>
+    <p class="wc-sub">From the first idea to the finished song. Catch it in the rehearsal room or on the go, then take it all the way here.</p>
     <div class="wc-tiles">
       <button data-go="idea"><span class="wc-ic">
         <svg viewBox="0 0 48 48"><rect x="17" y="6" width="14" height="24" rx="7" fill="currentColor"/><path d="M11 23a13 13 0 0026 0M24 36v6M17 42h14" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg></span>
