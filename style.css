@@ -540,3 +540,21 @@ body.has-clipbar .notice { bottom: var(--cb-top, 140px); }
 .tp-state.rec { background: #3a1513; border-color: #7a2a26; } .tp-state.rec .st-dot { background: #ff4a42; box-shadow: 0 0 8px #ff4a42; animation: capPulse 1s infinite; }
 .tp-state.count .st-dot, .tp-state.armed .st-dot { background: #f0b429; }
 .fader-cap, .knob, .fader-track { touch-action: none; }
+
+/* Try before you keep */
+.aud-modal { width: min(560px, calc(100vw - 20px)); }
+.aud-intro { margin-top: 0; max-width: none; }
+.aud-ctl { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 8px 0 6px; }
+.aud-ab { display: inline-flex; border: 1px solid #111; border-radius: 9px; overflow: hidden; }
+.aud-ab button { padding: 9px 16px; background: #34383e; color: var(--text); border: 0; font-weight: 700; font-size: 13px; cursor: pointer; }
+.aud-ab button.on { background: var(--accent-dim); color: #fff; }
+.aud-play { padding: 9px 16px; border-radius: 9px; border: 1px solid #111; background: #2f6b3d; color: #fff; font-weight: 700; font-size: 13px; cursor: pointer; }
+.aud-solo { margin: 0; font-size: 13px; }
+.aud-opts { max-height: 42vh; overflow-y: auto; padding-right: 2px; }
+.aud-g { margin-bottom: 6px; }
+.aud-gl { font-size: 11px; letter-spacing: .05em; text-transform: uppercase; color: var(--text-dim); }
+.aud-g .chips { margin: 4px 0 2px; }
+.aud-now { margin-top: 8px; padding: 8px 10px; border-radius: 8px; background: #1d2026; font-size: 13px; }
+.aud-amt { display: grid; grid-template-columns: 70px 1fr 48px; align-items: center; gap: 8px; margin-top: 8px; }
+.aud-amt[hidden] { display: none; }
+@media (max-width: 600px) { .aud-ab button, .aud-play { padding: 10px 14px; } .aud-opts { max-height: 36vh; } }
