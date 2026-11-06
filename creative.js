@@ -93,6 +93,9 @@ const ICON = {
   takes: '<svg viewBox="0 0 20 20" width="15" height="15"><path d="M3 5h14M3 10h14M3 15h9" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg>',
   share: '<svg viewBox="0 0 20 20" width="15" height="15"><path d="M10 13V3M6 7l4-4 4 4M4 12v4h12v-4" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>',
   play: '<svg viewBox="0 0 20 20" width="18" height="18"><path d="M6 4l10 6-10 6z" fill="currentColor"/></svg>',
+  start: '<svg viewBox="0 0 20 20" width="15" height="15"><path d="M5 4v12M16 4l-8 6 8 6z" fill="currentColor" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>',
+  rew: '<svg viewBox="0 0 20 20" width="16" height="16"><path d="M10 5l-7 5 7 5zM18 5l-7 5 7 5z" fill="currentColor"/></svg>',
+  ff: '<svg viewBox="0 0 20 20" width="16" height="16"><path d="M2 5l7 5-7 5zM10 5l7 5-7 5z" fill="currentColor"/></svg>',
   help: '<svg viewBox="0 0 20 20" width="15" height="15"><circle cx="10" cy="10" r="7.5" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M7.8 7.6a2.3 2.3 0 114 1.6c-.9.7-1.8 1.1-1.8 2.4M10 14.3v.2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
 };
 (() => {
@@ -101,7 +104,10 @@ const ICON = {
   grp.className = 'tb-group simple-only creative-bar';
   grp.innerHTML = `
     <button id="bigRec" class="big-rec" title="Record. PrePro counts you in, then records. Press again to stop.">${ICON.rec}<span>Record</span></button>
+    <button id="bigStart" class="pill icon" title="Back to the start">${ICON.start}</button>
+    <button id="bigRew" class="pill icon" title="Back a bar">${ICON.rew}</button>
     <button id="bigPlay" class="big-play" title="Play my song from the start. Press again to stop.">${ICON.play}<span>Play</span></button>
+    <button id="bigFf" class="pill icon" title="Forward a bar">${ICON.ff}</button>
     <button id="countInBtn" class="pill on" title="Count me in: four clicks before recording starts">Count-in</button>
     <button id="bigUndo" class="pill icon" title="Undo. You can always go back.">${ICON.undo}<span>Undo</span></button>
     <button id="bigRedo" class="pill icon" title="Redo">${ICON.redo}</button>
@@ -117,6 +123,9 @@ const ICON = {
   $('#modePro').onclick = () => setSimple(false);
   $('#bigRec').onclick = bigRecord;
   $('#bigPlay').onclick = bigPlay;
+  $('#bigStart').onclick = () => goStart();
+  $('#bigRew').onclick = () => jump(-4 * beatSec());
+  $('#bigFf').onclick = () => jump(4 * beatSec());
   $('#countInBtn').onclick = () => { const v = !PREF.get('countIn', true); PREF.set('countIn', v); syncCreativeBar(); status(v ? 'Count-in on: four clicks before recording' : 'Count-in off: recording starts right away'); };
   $('#bigUndo').onclick = () => undo();
   $('#bigRedo').onclick = () => redo();
@@ -479,3 +488,10 @@ status = function (msg) {
   noticeEl.textContent = msg; noticeEl.hidden = false;
   clearTimeout(noticeTimer); noticeTimer = setTimeout(() => { noticeEl.hidden = true; }, 4500);
 };
+
+// keep the whole studio, including the play controls, inside the visible screen on phones
+(() => {
+  const fit = () => { const h = (window.visualViewport && visualViewport.height) || innerHeight; $('#app').style.height = Math.round(h) + 'px'; };
+  addEventListener('resize', fit); addEventListener('orientationchange', () => setTimeout(fit, 300));
+  window.visualViewport?.addEventListener('resize', fit); fit();
+})();
