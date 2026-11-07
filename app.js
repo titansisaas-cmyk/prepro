@@ -1111,7 +1111,7 @@ function renderHeaders() {
     el.innerHTML = `
       <div class="color" style="background:${tr.color}"></div>
       <div class="th-main">
-        <div class="th-row"><div class="th-name" title="Double-click to rename">${escapeHtml(tr.name)}</div></div>
+        <div class="th-row"><div class="th-name" title="Tap the name of a selected track to rename it">${escapeHtml(tr.name)}</div></div>
         <div class="th-row">
           <button class="tbtn rec ${tr.arm ? 'on' : ''}" data-act="arm" title="Record enable">R</button>
           <button class="tbtn inp ${tr.inputMon ? 'on' : ''}" data-act="inp" title="Input monitor">I</button>
@@ -1142,6 +1142,8 @@ $('#trackHeaders').addEventListener('mousedown', e => {
   }
   if (e.target.classList.contains('th-vol')) { dragValue(e, tr.vol, v => { tr.vol = v; applyMix(tr); e.target.textContent = fmtDb(v) + ' dB'; syncStrip(tr); }); return; }
   if (e.target.classList.contains('th-name') && e.target.isContentEditable) return;
+  // tap the name of the selected track to rename it (double-click works too)
+  if (e.target.classList.contains('th-name') && !e.shiftKey && !e.metaKey && !e.ctrlKey && S.sel.tracks.size === 1 && S.sel.tracks.has(tr.id)) { renameTrack(tr); return; }
   // select track
   if (e.shiftKey || e.metaKey || e.ctrlKey) { S.sel.tracks.has(tr.id) ? S.sel.tracks.delete(tr.id) : S.sel.tracks.add(tr.id); }
   else S.sel.tracks = new Set([tr.id]);
@@ -1154,13 +1156,13 @@ $('#trackHeaders').addEventListener('change', e => {
   }
 });
 $('#trackHeaders').addEventListener('dblclick', e => {
-  if (!e.target.classList.contains('th-name')) return;
+  if (!e.target.classList.contains('th-name') || !$('#modalBack').hidden) return;
   const tr = trackById(e.target.closest('.track-header').dataset.id);
   renameTrack(tr);
 });
 function renameTrack(tr) {
   openModal('Rename Track', `<div class="row" style="grid-template-columns:80px 1fr"><label>Name</label><input type="text" id="rnIn" value="${escapeHtml(tr.name)}" maxlength="32"></div>`,
-    [{ label: 'Cancel' }, { label: 'OK', primary: true, action: () => { const v = $('#rnIn').value.trim(); if (v) { tr.name = v; refreshAll(); } } }]);
+    [{ label: 'Cancel' }, { label: 'OK', primary: true, action: () => { const v = $('#rnIn').value.trim(); if (v && v !== tr.name) { pushHistory(); tr.name = v; refreshAll(); if (typeof renderStage === 'function' && !$('#stageWin')?.hidden) renderStage(); dirty(); status('Track renamed to ' + v); } } }]);
   setTimeout(() => { $('#rnIn').select(); }, 20);
 }
 function dragValue(e, start, cb, range = [-90, 12], sens = 0.25) {

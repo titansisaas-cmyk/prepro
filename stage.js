@@ -178,11 +178,13 @@ function renderStageCard() {
     <button class="pill ${tr.solo ? 'on' : ''}" data-a="solo" title="Hear only this part">Solo</button>
     <button class="pill ${tr.mute ? 'on' : ''}" data-a="mute" title="Silence this part">Mute</button>
     <button class="pill" data-a="fx" title="Choose a sound for this part, such as Warm vocal">Sound</button>
+    <button class="pill" data-a="name" title="Give this part a new name">Rename</button>
     <button class="pill" data-a="reset" title="Put this part back in the centre at 0 dB">Reset</button>`;
   c.querySelectorAll('button').forEach(b => b.onclick = async e => {
     const a = b.dataset.a;
     if (a === 'solo' || a === 'mute') { await toggleTrackFlag(tr, a, e.altKey); renderStage(); }
     else if (a === 'fx') chainsDialog(tr.id);
+    else if (a === 'name') renameTrack(tr);
     else if (a === 'reset') { pushHistory(); tr.pan = 0; tr.vol = 0; applyMix(tr); syncHeader(tr); syncStrip(tr); renderStage(); status(tr.name + ' is back in the centre at 0 dB'); }
   });
 }

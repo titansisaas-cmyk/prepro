@@ -52,7 +52,7 @@ async function startListening(quiet) {
     if (!CAP.node) {
       if (ctx.audioWorklet && window.AudioWorkletNode && capWorkletReady !== false) {
         if (!capWorkletReady) capWorkletReady = (async () => {
-          try { await ctx.audioWorklet.addModule('capture-worklet.js?v=15'); return true; } catch (e) {}
+          try { await ctx.audioWorklet.addModule('capture-worklet.js?v=17'); return true; } catch (e) {}
           try { await ctx.audioWorklet.addModule(URL.createObjectURL(new Blob([CAP_WORKLET], { type: 'application/javascript' }))); return true; } catch (e) {}
           return false;
         })();

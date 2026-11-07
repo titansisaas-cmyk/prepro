@@ -1,21 +1,48 @@
 /* iPhone and iPad microphone fixes.
    1. While a web page has the microphone open, iOS turns the built-in speaker down a lot.
       PrePro now closes the microphone as soon as a recording ends, so playback returns to full volume.
-   2. The audio session is set to play-and-record before the microphone opens, and back to playback after.
+   2. The audio session is set to play-and-record before the microphone opens, and back to automatic after (never playback, which blocks the microphone).
    3. Quiet takes are raised automatically with clip volume (never destructive, and the clip buttons can change it). */
 'use strict';
 
 const IS_IOS = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-const setAudioSession = t => { try { if (navigator.audioSession) navigator.audioSession.type = t; } catch (e) {} };
-async function bounceContext() { if (!IS_IOS) return; try { await ctx.suspend(); await ctx.resume(); } catch (e) {} }
+const setAudioSession = t => { try { if (navigator.audioSession && navigator.audioSession.type !== t) navigator.audioSession.type = t; } catch (e) {} };
+async function bounceContext() { try { if (ctx.state !== 'running') await Promise.race([ctx.resume(), new Promise(r => setTimeout(r, 400))]); } catch (e) {} }
+
+// Every microphone request goes through here. It sets the audio session to play-and-record first
+// (iOS refuses the microphone while the session is "playback"), and retries once without a saved
+// input device, because iPhone input IDs change between launches.
+if (navigator.mediaDevices?.getUserMedia) {
+  const gum = navigator.mediaDevices.getUserMedia.bind(navigator.mediaDevices);
+  navigator.mediaDevices.getUserMedia = async function (c) {
+    if (c && c.audio) setAudioSession('play-and-record');
+    try { return await gum(c); }
+    catch (e) {
+      const dev = c && c.audio && typeof c.audio === 'object' && c.audio.deviceId;
+      if (dev && (e.name === 'OverconstrainedError' || e.name === 'NotFoundError' || e.name === 'NotReadableError')) {
+        S.audioIn = ''; const a = { ...c.audio }; delete a.deviceId; return gum({ ...c, audio: a });
+      }
+      if (e.name === 'InvalidStateError') { setAudioSession('play-and-record'); return gum(c); }
+      throw e;
+    }
+  };
+}
+const micLive = () => { const t = micStream && micStream.getAudioTracks()[0]; return !!t && t.readyState === 'live' && !t.muted; };
+function dropMic() {
+  try { micSource && micSource.disconnect(); } catch (e) {}
+  try { micStream && micStream.getTracks().forEach(t => t.stop()); } catch (e) {}
+  micStream = null; micSource = null; micAnalyser = null;
+}
 
 { const _em = ensureMic;
   ensureMic = async function (...a) {
-    const had = !!micStream;
-    if (!had) setAudioSession('play-and-record');
+    if (micStream && !micLive()) dropMic();   // iOS may end or mute the input after a call, Siri or the app going to the background
     const ok = await _em(...a);
-    if (!ok && !had) setAudioSession('playback');
-    if (ok && !had) await bounceContext();
+    if (ok) {
+      await bounceContext();
+      const t = micStream && micStream.getAudioTracks()[0];
+      if (t && !t._ppWatch) { t._ppWatch = true; t.addEventListener('mute', () => { if (T.recording) status('iPhone paused the microphone. Stop, then record again.'); }); }
+    }
     return ok;
   }; }
 
@@ -26,8 +53,7 @@ function releaseMic() {
   try { micSource && micSource.disconnect(); } catch (e) {}
   micStream.getTracks().forEach(t => t.stop());
   micStream = null; micSource = null; micAnalyser = null;
-  setAudioSession('playback');
-  bounceContext();
+  setAudioSession('auto');   // never "playback": that blocks the next recording on iPhone
 }
 // on iPhone, keep the microphone open only while it is needed
 const keepMicOpen = () => CAP.listening || S.tracks.some(t => t.inputMon) || T.recording || T.recArmed || counting;
@@ -77,3 +103,16 @@ function clipPeak(buf, off, dur) {
     return ok;
   }; }
 MENUS.options = (orig => () => [...orig(), { label: 'Raise Quiet Takes Automatically', checked: PREF.get('autoLevel', true), action: () => PREF.set('autoLevel', !PREF.get('autoLevel', true)) }])(MENUS.options);
+
+// a few seconds into a take, make sure sound is really arriving
+setInterval(() => {
+  if (!T.recording || !micAnalyser) { recCheck.t = 0; return; }
+  if (!recCheck.t) { recCheck.t = performance.now(); recCheck.max = 0; recCheck.warned = false; }
+  const d = new Float32Array(micAnalyser.fftSize); micAnalyser.getFloatTimeDomainData(d);
+  for (let i = 0; i < d.length; i += 4) recCheck.max = Math.max(recCheck.max, Math.abs(d[i]));
+  if (!recCheck.warned && performance.now() - recCheck.t > 3000 && recCheck.max < 0.0005) {
+    recCheck.warned = true;
+    status(micLive() ? 'PrePro is not hearing anything yet. Sing or play a little louder, and check that nothing covers the microphone.' : 'The microphone is not sending sound. Stop, then press Record again.');
+  }
+}, 250);
+const recCheck = { t: 0, max: 0, warned: false };
