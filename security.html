@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>PrePro Security and Privacy: How PrePro Protects Your Songs</title>
+<meta name="theme-color" content="#16181c">
+<link rel="icon" href="icons/icon-192.png">
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #16181c; color: #e6e8eb; font: 16px/1.65 Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+  header { position: sticky; top: 0; z-index: 2; background: #1d2025f2; backdrop-filter: blur(8px); border-bottom: 1px solid #2b2f36; padding: 10px max(16px, env(safe-area-inset-left)); display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+  header .brand { font-weight: 700; display: flex; align-items: center; gap: 8px; }
+  header .brand i { width: 12px; height: 12px; border-radius: 50%; background: #4aa3ff; display: inline-block; }
+  header nav { display: flex; gap: 6px; flex-wrap: wrap; }
+  header nav a { color: #cfe3ff; text-decoration: none; font-size: 13px; padding: 5px 10px; border-radius: 14px; background: #262a31; }
+  header nav a:hover { background: #2f3540; }
+  header .back { margin-left: auto; font-size: 13px; color: #9fb7d6; }
+  main { max-width: 820px; margin: 0 auto; padding: 24px 18px 80px; }
+  h1 { font-size: 28px; line-height: 1.25; margin: 8px 0 6px; }
+  h2 { font-size: 22px; margin: 46px 0 8px; padding-top: 12px; border-top: 1px solid #2b2f36; scroll-margin-top: 70px; }
+  h3 { font-size: 17px; margin: 26px 0 6px; }
+  p, li { color: #d3d7dd; }
+  a { color: #7cc0ff; }
+  .meta { color: #9aa2ad; font-size: 14px; }
+  .summary { background: #1f2a38; border: 1px solid #2c4a6e; border-radius: 12px; padding: 14px 18px; margin: 18px 0; }
+  .summary h3 { margin-top: 4px; }
+  .caps { text-transform: uppercase; font-size: 14.5px; letter-spacing: .01em; }
+  table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 15px; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid #2b2f36; vertical-align: top; }
+  th { color: #fff; background: #20242a; }
+  @media (max-width: 640px) { header { position: static; } h2 { scroll-margin-top: 10px; } }
+  footer { max-width: 820px; margin: 0 auto; padding: 0 18px 40px; color: #8a929c; font-size: 13px; }
+  @media print { header { position: static; } body { background: #fff; color: #000; } p, li { color: #000; } a { color: #000; } .summary { background: #fff; } }
+</style>
+</head>
+<body>
+<header>
+  <span class="brand"><i></i>PrePro Security</span>
+  <nav aria-label="Sections">
+    <a href="#where">Where data lives</a>
+    <a href="#connections">Connections</a>
+    <a href="#ai">AI keys</a>
+    <a href="#payments">Payments</a>
+    <a href="#protect">Protect yourself</a>
+    <a href="#certs">Certifications</a>
+    <a href="#report">Report a problem</a>
+  </nav>
+  <a class="back" href="./">Back to PrePro</a>
+</header>
+<main>
+<h1>Security and Privacy at PrePro</h1>
+<p class="meta">Version 1.0. Last updated November 7, 2026.<br>PrePro is owned and operated by Red Road Innovation Group Inc. ("RRIG"). This page explains in plain language how PrePro handles your songs and information today. It is for information only. The <a href="legal.html">Terms of Use and Privacy Policy</a> are the binding documents, and they win if anything here differs.</p>
+
+<div class="summary">
+  <h3>The short version</h3>
+  <ul>
+    <li>PrePro has no account system and no song server. Your songs, takes and settings stay on your own device.</li>
+    <li>RRIG cannot see, open or listen to your songs, because they are never sent to us.</li>
+    <li>The AI features use your own AI account. Your key goes from your device straight to the AI company you chose.</li>
+    <li>Payments are handled by Lemon Squeezy. PrePro never sees your card number.</li>
+    <li>PrePro does not use advertising, tracking or analytics tools.</li>
+    <li>PrePro does not hold SOC 2, ISO 27001 or any other security certification. See <a href="#certs">Certifications</a>.</li>
+  </ul>
+</div>
+
+<h2 id="where">Where your data lives</h2>
+<p>PrePro runs inside your web browser, or as an installed app that uses the same browser engine. Everything you make is saved in your browser's private storage on that one device:</p>
+<table>
+  <tr><th>What</th><th>Where it is kept</th><th>Who can reach it</th></tr>
+  <tr><td>Songs, recordings, MIDI and mixes</td><td>Browser storage (IndexedDB) on your device</td><td>You, on that device and browser</td></tr>
+  <tr><td>Song versions</td><td>Browser storage (IndexedDB) on your device</td><td>You, on that device and browser</td></tr>
+  <tr><td>Settings and preferences</td><td>Browser storage (localStorage) on your device</td><td>You, on that device and browser</td></tr>
+  <tr><td>Your AI key, only if you tick "Remember on this device"</td><td>Browser storage (localStorage) on your device</td><td>You, on that device and browser</td></tr>
+  <tr><td>Your PrePro licence key, name and email from your receipt</td><td>Browser storage (localStorage) on your device</td><td>You, and Lemon Squeezy when the licence is checked</td></tr>
+</table>
+<p>Other websites cannot read this storage. Anyone who can use your unlocked device and browser can open PrePro and see your songs, so treat your device like your studio door.</p>
+<p>Because your songs are not copied to a server, RRIG cannot recover them if your device is lost, reset or wiped, or if you clear your browser data. Please keep your own backups. Click File, then Save Song File (.prepro), to save a copy you can keep somewhere safe, such as a USB drive or cloud folder.</p>
+
+<h2 id="connections">What PrePro connects to</h2>
+<p>All connections use encrypted HTTPS. PrePro only connects to these places:</p>
+<table>
+  <tr><th>Service</th><th>Why</th><th>What is sent</th></tr>
+  <tr><td>GitHub Pages (titansisaas-cmyk.github.io)</td><td>Delivers the PrePro app files</td><td>Normal web request details, such as your IP address and browser type</td></tr>
+  <tr><td>Google Fonts</td><td>Delivers the lettering used on screen</td><td>Normal web request details</td></tr>
+  <tr><td>The AI company you choose (OpenAI, Anthropic, Google or OpenRouter), only if you turn AI on</td><td>Answers your AI requests</td><td>Your key, your request, and the song details needed to answer it</td></tr>
+  <tr><td>Lemon Squeezy, only if you buy or enter a licence</td><td>Payment and licence checks</td><td>Your licence key and a device name</td></tr>
+</table>
+<p>Your audio recordings are never uploaded by PrePro. The microphone is only used while you are recording or listening, and PrePro closes it when you stop. MIDI devices such as drum kits are only used after you allow them.</p>
+
+<h2 id="ai">Your AI key</h2>
+<ul>
+  <li>You create the key in your own account with the AI company, and you pay that company directly.</li>
+  <li>PrePro sends the key only to the AI company you picked. RRIG never receives it.</li>
+  <li>If you do not tick "Remember on this device", the key is forgotten when you close PrePro.</li>
+  <li>To remove a saved key, open the AI window and click Disconnect.</li>
+  <li>Set a monthly spending limit in your AI account. If you think a key was exposed, delete it in your AI account and make a new one.</li>
+</ul>
+
+<h2 id="payments">Payments</h2>
+<p>Lemon Squeezy is the seller of record for paid plans. Card details are typed into Lemon Squeezy's own checkout page, and Lemon Squeezy says it is responsible for card data security under PCI-DSS. PrePro and RRIG never see or store your card number.</p>
+
+<h2 id="protect">How to protect your work</h2>
+<ol>
+  <li>Lock your phone, tablet or computer with a passcode.</li>
+  <li>Back up important songs often. Click File, then Save Song File (.prepro).</li>
+  <li>Do not clear your browser's website data for PrePro unless you have a backup.</li>
+  <li>On a shared computer, do not tick "Remember on this device" for your AI key.</li>
+  <li>Keep your browser and operating system up to date.</li>
+</ol>
+
+<h2 id="certs">Certifications and audits</h2>
+<p>PrePro does not currently hold SOC 2, ISO 27001 or any other security certification, and RRIG has not had an independent security audit. We do not claim to be compliant with any security standard.</p>
+<p>The companies PrePro relies on run their own security programs. For example, GitHub publishes SOC 2 Type 2 reports for its services. Those reports cover GitHub, not RRIG or PrePro.</p>
+<p>Because PrePro keeps your songs on your device and has no customer database, there is very little customer data in our hands to protect. If PrePro adds cloud storage, sharing or business accounts in the future, we plan to review whether an independent audit such as SOC 2 is right, and we will update this page.</p>
+
+<h2 id="report">Report a security problem</h2>
+<p>If you find a security problem in PrePro, please tell us privately before sharing it publicly, so we can fix it. A security contact address will be posted here before paid plans open. Please do not test against other people's devices or accounts.</p>
+
+<h2 id="changes">Changes to this page</h2>
+<p>We will update this page when PrePro changes how it handles data. The date at the top shows the latest version.</p>
+</main>
+<footer>&copy; 2026 Red Road Innovation Group Inc. All rights reserved. PrePro is an independent product and is not affiliated with or endorsed by Avid, Slate Digital, Roland, Apple, Google, OpenAI, Anthropic, GitHub or Lemon Squeezy. All trademarks belong to their owners.</footer>
+</body>
+</html>

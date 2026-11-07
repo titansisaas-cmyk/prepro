@@ -96,7 +96,7 @@ function aboutDialog() {
   openModal('About PrePro', `<p class="mic-one">PrePro takes a song from the first idea to the finished mix. Catch ideas in the rehearsal room or on the go, then record, edit, mix and share them, with a full studio for engineers and a simple mode for creatives.</p>
     <p class="mic-small">Songs are saved on this device. The AI assistant runs on your own AI account. PrePro works in the browser and installs as an app on iPhone, iPad, Android, Windows, Mac and Chromebook.</p>
     <p class="mic-small">PrePro is owned and licensed by Red Road Innovation Group Inc. It is an independent product and is not affiliated with or endorsed by Avid (Pro Tools), Slate Digital, Roland, Apple or Google. All trademarks belong to their owners.</p>
-    <p class="mic-small"><a href="${LEGAL_URL}#terms" target="_blank" rel="noopener">Terms of Use and Licence</a> · <a href="${LEGAL_URL}#privacy" target="_blank" rel="noopener">Privacy Policy</a> · <a href="${LEGAL_URL}#refunds" target="_blank" rel="noopener">Refund Policy</a> · <a href="${LEGAL_URL}#disclaimers" target="_blank" rel="noopener">Disclaimers</a></p>
+    <p class="mic-small"><a href="${LEGAL_URL}#terms" target="_blank" rel="noopener">Terms of Use and Licence</a> · <a href="${LEGAL_URL}#privacy" target="_blank" rel="noopener">Privacy Policy</a> · <a href="${LEGAL_URL}#refunds" target="_blank" rel="noopener">Refund Policy</a> · <a href="${LEGAL_URL}#disclaimers" target="_blank" rel="noopener">Disclaimers</a> · <a href="security.html" target="_blank" rel="noopener">Security</a></p>
     <p class="mic-small">&copy; 2026 Red Road Innovation Group Inc. All rights reserved.</p>`, [{ label: 'Close', primary: true }]);
 }
 MENUS.help = (orig => () => {
@@ -107,5 +107,6 @@ MENUS.help = (orig => () => {
     { label: 'Terms of Use and Licence', action: () => openLegal('terms') },
     { label: 'Privacy Policy', action: () => openLegal('privacy') },
     { label: 'Refund Policy', action: () => openLegal('refunds') },
-    { label: 'Legal Disclaimers and Trademarks', action: () => openLegal('disclaimers') }];
+    { label: 'Legal Disclaimers and Trademarks', action: () => openLegal('disclaimers') },
+    { label: 'Security and Privacy', action: () => window.open('security.html', '_blank', 'noopener') }];
 })(MENUS.help);
