@@ -1,7 +1,7 @@
 /* iPhone and iPad microphone fixes.
    1. While a web page has the microphone open, iOS turns the built-in speaker down a lot.
       PrePro now closes the microphone as soon as a recording ends, so playback returns to full volume.
-   2. The audio session is set to play-and-record before the microphone opens, and back to automatic after (never playback, which blocks the microphone).
+   2. The audio session is set to play-and-record before the microphone opens, and back to playback after, so the silent switch does not mute songs.
    3. Quiet takes are raised automatically with clip volume (never destructive, and the clip buttons can change it). */
 'use strict';
 
@@ -53,7 +53,9 @@ function releaseMic() {
   try { micSource && micSource.disconnect(); } catch (e) {}
   micStream.getTracks().forEach(t => t.stop());
   micStream = null; micSource = null; micAnalyser = null;
-  setAudioSession('auto');   // never "playback": that blocks the next recording on iPhone
+  // "playback" lets PrePro play even when the iPhone silent switch is on.
+  // It would block the microphone, but every microphone request above switches back to play-and-record first.
+  setAudioSession('playback');
 }
 // on iPhone, keep the microphone open only while it is needed
 const keepMicOpen = () => CAP.listening || S.tracks.some(t => t.inputMon) || T.recording || T.recArmed || counting;
@@ -116,3 +118,27 @@ setInterval(() => {
   }
 }, 250);
 const recCheck = { t: 0, max: 0, warned: false };
+
+// iPhone playback safety: start in "playback" so the silent switch does not mute PrePro,
+// wake the audio engine on every tap (iOS can pause it after recording, a call or the lock screen),
+// and never let Play wait forever on a paused engine.
+if (IS_IOS && !micStream) setAudioSession('playback');
+const wakeAudio = () => { if (ctx.state !== 'running') { try { ctx.resume(); } catch (e) {} } };
+['pointerdown', 'touchend', 'keydown'].forEach(ev => window.addEventListener(ev, wakeAudio, { capture: true, passive: true }));
+document.addEventListener('visibilitychange', () => { if (!document.hidden) wakeAudio(); });
+async function engineReady() {
+  if (ctx.state === 'running') return true;
+  await Promise.race([ctx.resume().catch(() => {}), new Promise(r => setTimeout(r, 700))]);
+  if (ctx.state === 'running') return true;
+  try { await Promise.race([ctx.suspend().then(() => ctx.resume()), new Promise(r => setTimeout(r, 700))]); } catch (e) {}
+  return ctx.state === 'running';
+}
+{ const _play = play;
+  play = async function (...a) {
+    if (T.playing) return _play(...a);
+    const ok = await engineReady();
+    if (!ok) { status('iPhone paused the sound. Tap Play again. If it stays silent, close PrePro and open it again.'); return; }
+    const r = await _play(...a);
+    if (IS_IOS && !micStream) setAudioSession('playback');
+    return r;
+  }; }
