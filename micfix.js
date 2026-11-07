@@ -1,7 +1,7 @@
 /* iPhone and iPad microphone fixes.
    1. While a web page has the microphone open, iOS turns the built-in speaker down a lot.
       PrePro now closes the microphone as soon as a recording ends, so playback returns to full volume.
-   2. The audio session is set to play-and-record before the microphone opens, and back to playback after, so the silent switch does not mute songs.
+   2. PrePro leaves the iPhone audio mode on automatic. Switching it during a session made iOS go silent while the meters kept moving.
    3. Quiet takes are raised automatically with clip volume (never destructive, and the clip buttons can change it). */
 'use strict';
 
@@ -9,20 +9,19 @@ const IS_IOS = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platfo
 const setAudioSession = t => { try { if (navigator.audioSession && navigator.audioSession.type !== t) navigator.audioSession.type = t; } catch (e) {} };
 async function bounceContext() { try { if (ctx.state !== 'running') await Promise.race([ctx.resume(), new Promise(r => setTimeout(r, 400))]); } catch (e) {} }
 
-// Every microphone request goes through here. It sets the audio session to play-and-record first
-// (iOS refuses the microphone while the session is "playback"), and retries once without a saved
+// Every microphone request goes through here. If iOS refuses because of the audio mode, it resets the mode to automatic
+// and tries again. It also retries once without a saved
 // input device, because iPhone input IDs change between launches.
 if (navigator.mediaDevices?.getUserMedia) {
   const gum = navigator.mediaDevices.getUserMedia.bind(navigator.mediaDevices);
   navigator.mediaDevices.getUserMedia = async function (c) {
-    if (c && c.audio) setAudioSession('play-and-record');
     try { return await gum(c); }
     catch (e) {
       const dev = c && c.audio && typeof c.audio === 'object' && c.audio.deviceId;
       if (dev && (e.name === 'OverconstrainedError' || e.name === 'NotFoundError' || e.name === 'NotReadableError')) {
         S.audioIn = ''; const a = { ...c.audio }; delete a.deviceId; return gum({ ...c, audio: a });
       }
-      if (e.name === 'InvalidStateError') { setAudioSession('play-and-record'); return gum(c); }
+      if (e.name === 'InvalidStateError') { setAudioSession('auto'); return gum(c); }
       throw e;
     }
   };
@@ -53,9 +52,6 @@ function releaseMic() {
   try { micSource && micSource.disconnect(); } catch (e) {}
   micStream.getTracks().forEach(t => t.stop());
   micStream = null; micSource = null; micAnalyser = null;
-  // "playback" lets PrePro play even when the iPhone silent switch is on.
-  // It would block the microphone, but every microphone request above switches back to play-and-record first.
-  setAudioSession('playback');
 }
 // on iPhone, keep the microphone open only while it is needed
 const keepMicOpen = () => CAP.listening || S.tracks.some(t => t.inputMon) || T.recording || T.recArmed || counting;
@@ -119,10 +115,8 @@ setInterval(() => {
 }, 250);
 const recCheck = { t: 0, max: 0, warned: false };
 
-// iPhone playback safety: start in "playback" so the silent switch does not mute PrePro,
-// wake the audio engine on every tap (iOS can pause it after recording, a call or the lock screen),
+// iPhone playback safety: wake the audio engine on every tap (iOS can pause it after recording, a call or the lock screen),
 // and never let Play wait forever on a paused engine.
-if (IS_IOS && !micStream) setAudioSession('playback');
 const wakeAudio = () => { if (ctx.state !== 'running') { try { ctx.resume(); } catch (e) {} } };
 ['pointerdown', 'touchend', 'keydown'].forEach(ev => window.addEventListener(ev, wakeAudio, { capture: true, passive: true }));
 document.addEventListener('visibilitychange', () => { if (!document.hidden) wakeAudio(); });
@@ -139,6 +133,20 @@ async function engineReady() {
     const ok = await engineReady();
     if (!ok) { status('iPhone paused the sound. Tap Play again. If it stays silent, close PrePro and open it again.'); return; }
     const r = await _play(...a);
-    if (IS_IOS && !micStream) setAudioSession('playback');
     return r;
   }; }
+
+// Silent switch: iPhone mutes Web Audio when the phone is on silent, unless a normal media element is playing.
+// A tiny silent loop started on the first tap tells iOS this is media, so songs play with the ringer off.
+// This uses WebKit's own audio mode choice, so the microphone still works.
+if (IS_IOS) {
+  const silentWav = (() => { const n = 4410, b = new ArrayBuffer(44 + n * 2), v = new DataView(b), w = (o, s) => [...s].forEach((c, i) => v.setUint8(o + i, c.charCodeAt(0)));
+    w(0, 'RIFF'); v.setUint32(4, 36 + n * 2, true); w(8, 'WAVE'); w(12, 'fmt '); v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true);
+    v.setUint32(24, 44100, true); v.setUint32(28, 88200, true); v.setUint16(32, 2, true); v.setUint16(34, 16, true); w(36, 'data'); v.setUint32(40, n * 2, true);
+    return URL.createObjectURL(new Blob([b], { type: 'audio/wav' })); })();
+  const keep = document.createElement('audio');
+  keep.src = silentWav; keep.loop = true; keep.setAttribute('playsinline', ''); keep.setAttribute('x-webkit-airplay', 'deny'); keep.preload = 'auto';
+  const unmute = () => { if (keep.paused && !document.hidden) keep.play().catch(() => {}); };
+  ['pointerdown', 'touchend', 'keydown'].forEach(ev => window.addEventListener(ev, unmute, { capture: true, passive: true }));
+  document.addEventListener('visibilitychange', () => { if (document.hidden) keep.pause(); });
+}

@@ -1,5 +1,5 @@
 /* PrePro offline support. Network first, so updates arrive straight away; the saved copy is used when offline. */
-const CACHE = 'prepro-v19';
+const CACHE = 'prepro-v20';
 const CORE = ['./', 'index.html', 'legal.html', 'security.html', 'style.css', 'storage.js', 'app.js', 'midi.js', 'editpro.js', 'prepro.js', 'creative.js', 'cliptools.js', 'license.js', 'workflow.js', 'micfix.js', 'stage.js', 'audition.js', 'pwa.js', 'capture-worklet.js', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/apple-touch-icon.png'];
 self.addEventListener('install', e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(CORE)).catch(() => {})); self.skipWaiting(); });
 self.addEventListener('activate', e => { e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== CACHE).map(k => caches.delete(k)))).then(() => self.clients.claim())); });
