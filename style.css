@@ -567,3 +567,12 @@ body.has-clipbar .notice { bottom: var(--cb-top, 140px); }
 .legal-agree { margin: 10px 0 2px; font-size: 13px; align-items: flex-start; }
 .legal-agree input { margin-top: 3px; }
 .modal a { color: #8cc6ff; }
+/* Edit and Mix switch: phones and small tablets only */
+.view-flip { display: none; }
+@media (max-width: 900px) {
+  .view-flip { display: flex; align-items: center; gap: 6px; position: fixed; right: max(12px, env(safe-area-inset-right)); z-index: 40;
+    padding: 10px 16px; border-radius: 22px; border: 1px solid #4a6f9a; background: #1f3550; color: #e8f2ff; font: 600 15px/1 Inter, system-ui, sans-serif;
+    box-shadow: 0 4px 14px #0008; touch-action: manipulation; }
+  .view-flip:active { background: #2a4870; }
+  .modal-back:not([hidden]) ~ .view-flip { display: none; }
+}

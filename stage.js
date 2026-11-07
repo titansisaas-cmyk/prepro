@@ -339,3 +339,16 @@ document.addEventListener('keydown', e => {
   if (e.shiftKey && !e.metaKey && !e.ctrlKey && !e.altKey && (e.key === 'W' || e.key === 'w')) { e.preventDefault(); e.stopPropagation(); wholeSong(); }
   else if (e.shiftKey && !e.metaKey && !e.ctrlKey && !e.altKey && (e.key === 'B' || e.key === 'b')) { e.preventDefault(); e.stopPropagation(); setView(S.view === 'stage' ? 'edit' : 'stage'); }
 }, true);
+
+// Edit and Mix switch you can always see (on phones the toolbar buttons are off screen)
+{ const b = document.createElement('button');
+  b.id = 'viewFlip'; b.className = 'view-flip'; b.type = 'button';
+  document.body.appendChild(b);
+  const sync = () => { const toMix = S.view !== 'mix'; b.innerHTML = toMix ? '<span aria-hidden="true">&#9776;</span> Mix' : '<span aria-hidden="true">&#9636;</span> Edit';
+    b.title = (toMix ? 'Go to the Mix window' : 'Go to the Edit window') + ' (Ctrl+=)'; b.setAttribute('aria-label', b.title); };
+  b.onclick = () => { setView(S.view === 'mix' ? 'edit' : 'mix'); };
+  const _sv = setView; setView = function (v) { _sv(v); sync(); };
+  sync();
+  const place = () => { const t = document.querySelector('.transport'); b.style.bottom = ((t ? t.getBoundingClientRect().height : 56) + 10) + 'px'; };
+  place(); addEventListener('resize', place);
+}
